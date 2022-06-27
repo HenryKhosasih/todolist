@@ -5,6 +5,7 @@ const app = express();
 const localPort = 3000;
 
 let items = [];
+let workItems = [];
 
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -20,12 +21,23 @@ app.get("/", function (req, res) {
 
 	const day = today.toLocaleDateString("en-AU", options);
 
-	res.render("list", { day: day, items: items });
+	res.render("list", { listTitle: day, items: items });
 });
 
 app.post("/", function (req, res) {
-	items.push(req.body.newItem);
-	res.redirect("/");
+	let newItem = req.body.newItem;
+
+	if (req.body.list == "Work") {
+		workItems.push(newItem);
+		res.redirect("/work");
+	} else {
+		items.push(newItem);
+		res.redirect("/");
+	}
+});
+
+app.get("/work", function (req, res) {
+	res.render("list", { listTitle: "Work", items: workItems });
 });
 
 app.listen(localPort, function () {
