@@ -40,6 +40,10 @@ app.get("/work", function (req, res) {
 	res.render("list", { listTitle: "Work", items: workItems });
 });
 
+app.get("/about", function (req, res) {
+	res.render("about");
+});
+
 app.listen(localPort, function () {
 	console.log(`ToDoList server is running at port ${localPort}`);
 });
