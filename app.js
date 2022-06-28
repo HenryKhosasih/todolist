@@ -5,8 +5,8 @@ const date = require(__dirname + "/date.js");
 const app = express();
 const localPort = 3000;
 
-let items = [];
-let workItems = [];
+const items = [];
+const workItems = [];
 
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -18,7 +18,7 @@ app.get("/", function (req, res) {
 });
 
 app.post("/", function (req, res) {
-	let newItem = req.body.newItem;
+	const newItem = req.body.newItem;
 
 	if (req.body.list == "Work") {
 		workItems.push(newItem);
