@@ -1,7 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
-// const date = require(__dirname + "/date.js");
+const _ = require("lodash");
 
 const app = express();
 const localPort = 3000;
@@ -42,6 +42,7 @@ const List = mongoose.model("list", listSchema);
 app.get("/", function (req, res) {
 	Item.find(function (err, foundItems) {
 		if (foundItems.length === 0) {
+			// populate with default items
 			Item.insertMany(defaultItems, function (err) {
 				if (err) {
 					console.log(err);
@@ -51,6 +52,7 @@ app.get("/", function (req, res) {
 			});
 			res.redirect("/");
 		} else {
+			// render list items
 			res.render("list", { listTitle: "Today", items: foundItems });
 		}
 	});
@@ -64,12 +66,12 @@ app.post("/", function (req, res) {
 		name: itemName,
 	});
 
-	// root list
+	// add new items for root list
 	if (listName === "Today") {
 		item.save();
 		res.redirect("/");
 	} else {
-		// custom list
+		// add new items for custom list
 		List.findOne({ name: listName }, function (err, foundList) {
 			foundList.items.push(item);
 			foundList.save();
@@ -79,20 +81,37 @@ app.post("/", function (req, res) {
 });
 
 app.post("/delete", function (req, res) {
-	const itemID = req.body.checkbox;
-	Item.findByIdAndRemove(itemID, function (err) {
-		if (!err) {
-			res.redirect("/");
-		}
-	});
+	const checkItemId = req.body.checkbox;
+	const listName = req.body.listName;
+
+	if (listName === "Today") {
+		// remove items for root list
+		Item.findByIdAndRemove(checkItemId, function (err) {
+			if (!err) {
+				res.redirect("/");
+			}
+		});
+	} else {
+		// remove items for custom list
+		List.findOneAndUpdate(
+			{ name: listName },
+			{ $pull: { items: { _id: checkItemId } } }, // mongodb operator to remove an item from items array
+			function (err, foundList) {
+				if (!err) {
+					res.redirect("/" + listName);
+				}
+			}
+		);
+	}
 });
 
 app.get("/:customListName", function (req, res) {
-	const customListName = req.params.customListName;
+	const customListName = _.capitalize(req.params.customListName);
 
 	List.findOne({ name: customListName }, function (err, foundItems) {
 		if (!err) {
 			if (!foundItems) {
+				// create new list if never created in db
 				const list = new List({
 					name: customListName,
 					items: defaultItems,
@@ -101,6 +120,7 @@ app.get("/:customListName", function (req, res) {
 				list.save();
 				res.redirect("/" + customListName);
 			} else {
+				// render items if list was created previously
 				res.render("list", {
 					listTitle: foundItems.name,
 					items: foundItems.items,
@@ -108,10 +128,6 @@ app.get("/:customListName", function (req, res) {
 			}
 		}
 	});
-});
-
-app.get("/about", function (req, res) {
-	res.render("about");
 });
 
 app.listen(localPort, function () {
