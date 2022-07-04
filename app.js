@@ -10,11 +10,14 @@ app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static("public"));
 
-mongoose.connect("mongodb://localhost:27017/todolistDB");
+// connect to mongo db atlas in the cloud
+mongoose.connect(
+	"mongodb+srv://admin-henry:Test123@cluster0.z5agn.mongodb.net/todolist?retryWrites=true&w=majority"
+);
 
-const itemsSchema = new mongoose.Schema({
+const itemsSchema = {
 	name: String,
-});
+};
 
 const Item = mongoose.model("item", itemsSchema);
 
@@ -32,10 +35,10 @@ const item3 = new Item({
 
 const defaultItems = [item1, item2, item3];
 
-const listSchema = new mongoose.Schema({
+const listSchema = {
 	name: String,
 	items: [itemsSchema],
-});
+};
 
 const List = mongoose.model("list", listSchema);
 
@@ -81,12 +84,12 @@ app.post("/", function (req, res) {
 });
 
 app.post("/delete", function (req, res) {
-	const checkItemId = req.body.checkbox;
+	const checkedItemId = req.body.checkbox;
 	const listName = req.body.listName;
 
 	if (listName === "Today") {
 		// remove items for root list
-		Item.findByIdAndRemove(checkItemId, function (err) {
+		Item.findByIdAndRemove(checkedItemId, function (err) {
 			if (!err) {
 				res.redirect("/");
 			}
@@ -95,7 +98,7 @@ app.post("/delete", function (req, res) {
 		// remove items for custom list
 		List.findOneAndUpdate(
 			{ name: listName },
-			{ $pull: { items: { _id: checkItemId } } }, // mongodb operator to remove an item from items array
+			{ $pull: { items: { _id: checkedItemId } } }, // mongodb operator to remove an item from items array
 			function (err, foundList) {
 				if (!err) {
 					res.redirect("/" + listName);
