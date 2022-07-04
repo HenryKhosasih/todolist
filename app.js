@@ -16,7 +16,7 @@ app.use(express.static("public"));
 
 // connect to mongo db atlas in the cloud
 mongoose.connect(
-	"mongodb+srv://${process.env.db_username}:${process.env.db_password}@cluster0.z5agn.mongodb.net/todolist?retryWrites=true&w=majority"
+	`mongodb+srv://${process.env.db_username}:${process.env.db_password}@cluster0.z5agn.mongodb.net/todolist?retryWrites=true&w=majority`
 );
 
 const itemsSchema = {
