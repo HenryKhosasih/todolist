@@ -6,9 +6,6 @@ const mongoose = require("mongoose");
 const app = express();
 const localPort = 3000;
 
-const items = [];
-const workItems = [];
-
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static("public"));
@@ -35,8 +32,14 @@ const item3 = new Item({
 
 const defaultItems = [item1, item2, item3];
 
+const listSchema = new mongoose.Schema({
+	name: String,
+	items: [itemsSchema],
+});
+
+const List = mongoose.model("list", listSchema);
+
 app.get("/", function (req, res) {
-	// const day = date.getDate();
 	Item.find(function (err, foundItems) {
 		if (foundItems.length === 0) {
 			Item.insertMany(defaultItems, function (err) {
@@ -55,22 +58,56 @@ app.get("/", function (req, res) {
 
 app.post("/", function (req, res) {
 	const itemName = req.body.newItem;
+	const listName = req.body.list;
 
 	const item = new Item({
 		name: itemName,
 	});
 
-	item.save();
-
-	if (req.body.list == "Work") {
-		res.redirect("/work");
-	} else {
+	// root list
+	if (listName === "Today") {
+		item.save();
 		res.redirect("/");
+	} else {
+		// custom list
+		List.findOne({ name: listName }, function (err, foundList) {
+			foundList.items.push(item);
+			foundList.save();
+			res.redirect("/" + listName);
+		});
 	}
 });
 
-app.get("/work", function (req, res) {
-	res.render("list", { listTitle: "Work", items: workItems });
+app.post("/delete", function (req, res) {
+	const itemID = req.body.checkbox;
+	Item.findByIdAndRemove(itemID, function (err) {
+		if (!err) {
+			res.redirect("/");
+		}
+	});
+});
+
+app.get("/:customListName", function (req, res) {
+	const customListName = req.params.customListName;
+
+	List.findOne({ name: customListName }, function (err, foundItems) {
+		if (!err) {
+			if (!foundItems) {
+				const list = new List({
+					name: customListName,
+					items: defaultItems,
+				});
+
+				list.save();
+				res.redirect("/" + customListName);
+			} else {
+				res.render("list", {
+					listTitle: foundItems.name,
+					items: foundItems.items,
+				});
+			}
+		}
+	});
 });
 
 app.get("/about", function (req, res) {
